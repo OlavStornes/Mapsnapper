@@ -1,9 +1,10 @@
+import os
+import time
 import requests
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from urllib.parse import urljoin
-import time
-import os
+import glob
 
 
 ATLAS_URL = "https://vgmaps.com/Atlas/"
@@ -36,7 +37,7 @@ class Game:
 
     @staticmethod
     def get_game_name(table_entry) -> str:
-        return table_entry.find_next('td').text.rstrip(' Maps')
+        return table_entry.find_next('td').text.replace(' Maps', '')
 
     def translate_table(self):
         self.parsed = self.html.findAll('tr')
@@ -63,29 +64,35 @@ class Game:
             "href": href
         }
 
-    def create_file(self, target, response):
-        type, prefix = response.headers['Content-Type'].split('/')
-        filename = sanitize_input(target['title'])
-        map_path = os.path.join(self.game_folder, f"{filename}.{prefix}")
-
-        with open(map_path, "wb") as file:
+    def create_file(self, filepath, response):
+        with open(filepath, "wb") as file:
             file.write(response.content)
 
     def download_maps(self):
         for target_map in self.maps:
             target_url = urljoin(self.game_url, target_map['href'])
+            postfix = target_url.split('.')[-1]
+            filename = f"{sanitize_input(target_map['title'])}.{postfix}"
+            map_path = os.path.join(self.game_folder, filename)
+
+            if self.map_already_exists(map_path):
+                print(f"Skipping {filename}, as it already exists")
+                continue
+
             print(f"Downloading from {target_url}..", end="")
             r = requests.get(target_url, allow_redirects=True)
-
-            self.create_file(target_map, r)
+            self.create_file(map_path, r)
             print(f"\t Done!")
-            time.sleep(1)
+            time.sleep(2)
+
+    def map_already_exists(self, map_path):
+        return os.path.isfile(map_path)
 
     def main(self):
-        self.maps = []
         self.translate_table()
         self.name = sanitize_input(self.get_game_name(self.parsed[TR_NAME_POS]))
         print(f"Starting downloading for {self.name}")
+        self.maps = []
         self.get_game_folder()
 
         for map_entry in self.parsed[TR_GAMES_START:]:
@@ -109,6 +116,7 @@ class Console():
         self.path = get_or_create_folder(relative_path)
 
     def main(self):
+        print(f"Starting scraping on {self.name}")
         self.get_console_folder()
         response = requests.get(self.url)
         self.soup = BeautifulSoup(response.text, "html.parser")
@@ -119,24 +127,34 @@ class Console():
             x = Game(html_game, self.url, self.path)
             x.main()
 
+        print(f"Finished scraping {self.name}! \n\n")
+
 
 class MapScraper():
-
     def get_console_list(self):
         self.consoles = {}
         for x in self.soup.findAll("a", class_="r"):
             if x.has_attr('name') and not x.find('img'):
-                key = x.text
-                self.consoles[key] = urljoin(ATLAS_URL, x.href)
+                try:
+                    key = x.text
+                    self.consoles[key] = urljoin(ATLAS_URL, x['href'])
+                except KeyError:
+                    pass
+
+    def get_maps_folder(self):
+        self.maps_folder = get_or_create_folder("maps")
 
     def main(self):
         response = requests.get(ATLAS_URL)
+        print(f"Aquiring consoles present on {ATLAS_URL}")
         self.soup = BeautifulSoup(response.text, "html.parser")
         self.get_console_list()
+        self.get_maps_folder()
 
         for name, url in self.consoles.items():
-            console_scraper = Console(name, url, ".")
+            console_scraper = Console(name, url, self.maps_folder)
             console_scraper.main()
+
 
 if __name__ == "__main__":
     x = MapScraper()
