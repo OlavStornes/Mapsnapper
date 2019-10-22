@@ -204,7 +204,7 @@ class MapScraper():
         self.initialize()
 
         i = 0
-        total_consoles = len(self.consoles)
+        total_consoles = len(self.target_consoles)
         for name, url in self.target_consoles.items():
             i += 1
             print(f"Console{i} of {total_consoles}\n")
