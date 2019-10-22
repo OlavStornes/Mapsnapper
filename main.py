@@ -93,7 +93,11 @@ class Game:
 
     def main(self):
         self.translate_table()
-        self.name = sanitize_input(self.get_game_name(self.parsed[TR_NAME_POS]))
+        try:
+            self.name = sanitize_input(self.get_game_name(self.parsed[TR_NAME_POS]))
+        except IndexError:
+            print(f"Something went wrong on a game on {self.game_url}")
+            return
         print(f"Starting downloading for {self.name}")
         self.maps = []
         self.get_game_folder()
@@ -133,7 +137,7 @@ class Console():
         total_games = len(self.games)
         for html_game in self.games:
             i += 1
-            print(f"Game{i} of {total_games}")
+            print(f"Game {i} of {total_games}")
             x = Game(html_game, self.url, self.path)
             x.main()
 
@@ -207,7 +211,7 @@ class MapScraper():
         total_consoles = len(self.target_consoles)
         for name, url in self.target_consoles.items():
             i += 1
-            print(f"Console{i} of {total_consoles}\n")
+            print(f"Console {i} of {total_consoles}\n")
             console_scraper = Console(name, url, self.maps_folder)
             console_scraper.main()
 
