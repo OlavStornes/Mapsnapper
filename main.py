@@ -4,8 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from urllib.parse import urljoin
-import glob
-
+import argparse
+import sys
 
 ATLAS_URL = "https://vgmaps.com/Atlas/"
 
@@ -69,7 +69,10 @@ class Game:
             file.write(response.content)
 
     def download_maps(self):
+        total_maps = len(self.maps)
+        i = 0
         for target_map in self.maps:
+            i += 1
             target_url = urljoin(self.game_url, target_map['href'])
             postfix = target_url.split('.')[-1]
             filename = f"{sanitize_input(target_map['title'])}.{postfix}"
@@ -79,7 +82,7 @@ class Game:
                 print(f"Skipping {filename}, as it already exists")
                 continue
 
-            print(f"Downloading from {target_url}..", end="")
+            print(f"{i}/{total_maps} - Downloading from {target_url}..", end="")
             r = requests.get(target_url, allow_redirects=True)
             self.create_file(map_path, r)
             print(f"\t Done!")
@@ -96,7 +99,10 @@ class Game:
         self.get_game_folder()
 
         for map_entry in self.parsed[TR_GAMES_START:]:
-            self.maps.append(self.translate_map_entry(map_entry))
+            try:
+                self.maps.append(self.translate_map_entry(map_entry))
+            except IndexError:
+                continue
 
         self.download_maps()
         print(f"Done downloading for game {self.name}")
@@ -109,7 +115,7 @@ class Console():
         self.parent_path = path
 
     def find_all_games(self) -> list:
-        self.games = self.soup.findAll('table')
+        self.games = self.soup.findAll('table')[2:]
 
     def get_console_folder(self):
         relative_path = os.path.join(self.parent_path, sanitize_input(self.name))
@@ -123,7 +129,11 @@ class Console():
 
         self.find_all_games()
 
-        for html_game in self.games[2:]:
+        i = 0
+        total_games = len(self.games)
+        for html_game in self.games:
+            i += 1
+            print(f"Game{i} of {total_games}")
             x = Game(html_game, self.url, self.path)
             x.main()
 
@@ -131,6 +141,21 @@ class Console():
 
 
 class MapScraper():
+
+    def handle_args(self):
+        self.parser = argparse.ArgumentParser()
+        self.parser.add_argument(
+            "-s", "--sources",
+            help="Choose which consoles you want to download",
+            nargs='+',
+            type=str
+        )
+        self.parser.add_argument(
+            "-y", "--yes",
+            help="Ignore the confirmation on the start",
+            action="store_true"
+        )
+
     def get_console_list(self):
         self.consoles = {}
         for x in self.soup.findAll("a", class_="r"):
@@ -144,14 +169,45 @@ class MapScraper():
     def get_maps_folder(self):
         self.maps_folder = get_or_create_folder("maps")
 
+    def initialize(self):
+        print("\nWelcome to the Mapper snapper!\n")
+        self.get_maps_folder()
+        self.handle_args()
+
+        args = self.parser.parse_args()
+        skip_confirmation = args.yes
+
+        self.target_consoles = {}
+
+        if args.sources:
+            for c_entry in args.sources:
+                for console, href in self.consoles.items():
+                    if c_entry.lower() in console.lower():
+                        self.target_consoles[console] = href
+        else:
+            self.target_consoles = self.consoles
+
+        print("You are currently attempting the following:")
+        for x in self.target_consoles.keys():
+            print(x)
+
+        if not skip_confirmation:
+            proceed = input("\nDo you wish to proceed? y/n: > ")
+            if proceed != 'y':
+                sys.exit(1)
+
     def main(self):
         response = requests.get(ATLAS_URL)
-        print(f"Aquiring consoles present on {ATLAS_URL}")
+        print(f"Aquiring consoles present on {ATLAS_URL}, please wait..")
         self.soup = BeautifulSoup(response.text, "html.parser")
         self.get_console_list()
-        self.get_maps_folder()
+        self.initialize()
 
-        for name, url in self.consoles.items():
+        i = 0
+        total_consoles = len(self.consoles)
+        for name, url in self.target_consoles.items():
+            i += 1
+            print(f"Console{i} of {total_consoles}\n")
             console_scraper = Console(name, url, self.maps_folder)
             console_scraper.main()
 
