@@ -15,13 +15,15 @@ TR_GAMES_START = 2
 
 
 def sanitize_input(string_input):
-    for x in r":/\*?":
+    for x in r"/\*?":
         string_input = string_input.replace(x, '_')
+    string_input = string_input.replace('"', "'")
+    string_input = string_input.replace(':', " -").replace('  ', ' ')
     return string_input
 
 
 def get_or_create_folder(target_folder):
-    target_folder = target_folder
+    target_folder = target_folder.replace('.', '')
     if not os.path.exists(target_folder):
         os.mkdir(target_folder)
         return target_folder
@@ -82,11 +84,15 @@ class Game:
                 print(f"Skipping {filename}, as it already exists")
                 continue
 
-            print(f"{i}/{total_maps} - Downloading from {target_url}..", end="")
-            r = requests.get(target_url, allow_redirects=True)
-            self.create_file(map_path, r)
-            print(f"\t Done!")
-            time.sleep(2)
+            try:
+                print(f"{i}/{total_maps} - Downloading from {target_url}..", end="")
+                r = requests.get(target_url, allow_redirects=True)
+                self.create_file(map_path, r)
+                print(f"\t Done!")
+            except Exception as e:
+                print(f"Error! {e}")
+                time.sleep(60)
+            time.sleep(5)
 
     def map_already_exists(self, map_path):
         return os.path.isfile(map_path)
@@ -119,7 +125,7 @@ class Console():
         self.parent_path = path
 
     def find_all_games(self) -> list:
-        self.games = self.soup.findAll('table')[2:]
+        self.games = self.soup.findAll('table')
 
     def get_console_folder(self):
         relative_path = os.path.join(self.parent_path, sanitize_input(self.name))

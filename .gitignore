@@ -1,2 +1,4 @@
 *.png
 .vscode/
+maps/*
+*.log
