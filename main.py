@@ -135,7 +135,7 @@ class Console():
         print(f"Starting scraping on {self.name}")
         self.get_console_folder()
         response = requests.get(self.url)
-        self.soup = BeautifulSoup(response.text, "html.parser")
+        self.soup = BeautifulSoup(response.text, "html5lib")
 
         self.find_all_games()
 
@@ -209,7 +209,7 @@ class MapScraper():
     def main(self):
         response = requests.get(ATLAS_URL)
         print(f"Aquiring consoles present on {ATLAS_URL}, please wait..")
-        self.soup = BeautifulSoup(response.text, "html.parser")
+        self.soup = BeautifulSoup(response.text, "html5lib")
         self.get_console_list()
         self.initialize()
 
