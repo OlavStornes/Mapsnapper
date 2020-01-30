@@ -203,6 +203,9 @@ class MapScraper():
         for x in self.target_consoles.keys():
             print(x)
 
+        print("Downloading all the consoles above at:")
+        print(os.path.abspath(self.args.path))
+
         if not skip_confirmation:
             proceed = input("\nDo you wish to proceed? y/n: > ")
             if proceed != 'y':
