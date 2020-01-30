@@ -31,6 +31,13 @@ def get_or_create_folder(target_folder):
         return target_folder
 
 
+def dir_path(string):
+    if os.path.isdir(string):
+        return string
+    else:
+        raise NotADirectoryError(string)
+
+
 @dataclass
 class Game:
     html: object
@@ -152,7 +159,7 @@ class Console():
 
 class MapScraper():
 
-    def handle_args(self):
+    def __init__(self):
         self.parser = argparse.ArgumentParser()
         self.parser.add_argument(
             "-s", "--sources",
@@ -166,6 +173,7 @@ class MapScraper():
             action="store_true"
         )
         self.parser.add_argument('path', type=dir_path)
+        self.args = self.parser.parse_args()
 
     def get_console_list(self):
         self.consoles = {}
@@ -177,21 +185,14 @@ class MapScraper():
                 except KeyError:
                     pass
 
-    def get_maps_folder(self):
-        self.maps_folder = get_or_create_folder("maps")
-
     def initialize(self):
         print("\nWelcome to the Mapper snapper!\n")
-        self.get_maps_folder()
-        self.handle_args()
-
-        args = self.parser.parse_args()
-        skip_confirmation = args.yes
+        skip_confirmation = self.args.yes
 
         self.target_consoles = {}
 
-        if args.sources:
-            for c_entry in args.sources:
+        if self.args.sources:
+            for c_entry in self.args.sources:
                 for console, href in self.consoles.items():
                     if c_entry.lower() in console.lower():
                         self.target_consoles[console] = href
@@ -219,7 +220,7 @@ class MapScraper():
         for name, url in self.target_consoles.items():
             i += 1
             print(f"Console {i} of {total_consoles}\n")
-            console_scraper = Console(name, url, self.maps_folder)
+            console_scraper = Console(name, url, self.args.path)
             console_scraper.main()
 
 
