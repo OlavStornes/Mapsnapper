@@ -9,6 +9,7 @@ Mapsnapper shamelessly downloads all maps from [The Video Game Atlas](https://vg
 
 # Usage
 
+* `path` : The path where you want the maps to be downloaded to
 * `--help -h` : Shows the help menu
 * `--source -s` : Match which consoles you would like to download from
 * `--yes -y` : Start without a confirmation
@@ -17,10 +18,10 @@ Mapsnapper shamelessly downloads all maps from [The Video Game Atlas](https://vg
 ## Arguments
 The option `-s` accepts an arbitrary amount of inputs. This is an inclusive search, so you will retrieve all consoles that has whatever variable you decide to put in  
 
-### Example:
+### Examples:
 
-* `python ./main.py -s windows` 
-* `python ./main.py -s nes ios`
+* `python ./main.py /home/user/maps -s windows` 
+* `python ./main.py . -s nes ios`
 
 ## Folder layout:
 
