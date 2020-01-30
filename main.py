@@ -165,6 +165,7 @@ class MapScraper():
             help="Ignore the confirmation on the start",
             action="store_true"
         )
+        self.parser.add_argument('path', type=dir_path)
 
     def get_console_list(self):
         self.consoles = {}
