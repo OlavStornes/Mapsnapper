@@ -32,10 +32,11 @@ def get_or_create_folder(target_folder):
 
 
 def dir_path(string):
-    if os.path.isdir(string):
-        return string
+    path = os.path.abspath(string)
+    if os.path.isdir(path):
+        return path
     else:
-        raise argparse.ArgumentTypeError(f"readable_dir:{string} is not a valid path")
+        raise argparse.ArgumentTypeError(f"readable_dir:{path} is not a valid path")
 
 
 @dataclass
@@ -204,7 +205,7 @@ class MapScraper():
             print(x)
 
         print("Downloading all the consoles above at:")
-        print(os.path.abspath(self.args.path))
+        print(self.args.path)
 
         if not skip_confirmation:
             proceed = input("\nDo you wish to proceed? y/n: > ")
