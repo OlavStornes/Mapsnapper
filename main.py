@@ -36,7 +36,8 @@ def dir_path(string):
     if os.path.isdir(path):
         return path
     else:
-        raise argparse.ArgumentTypeError(f"readable_dir:{path} is not a valid path")
+        raise argparse.ArgumentTypeError(
+            f"readable_dir:{path} is not a valid path")
 
 
 @dataclass
@@ -68,6 +69,8 @@ class Game:
         elif main_entry.find('a'):
             href = main_entry.find('a')['href']
             title = main_entry.text
+        else:
+            raise Exception(f'No title or href found on {self.name}')
 
         return {
             "title": sanitize_input(title),
@@ -108,7 +111,11 @@ class Game:
     def main(self):
         self.translate_table()
         try:
-            self.name = sanitize_input(self.get_game_name(self.parsed[TR_NAME_POS]))
+            self.name = sanitize_input(
+                self.get_game_name(self.parsed[TR_NAME_POS]))
+            if not self.name:
+                print(f"Game name is not initialized on {self.game_url}")
+                return
         except IndexError:
             print(f"Something went wrong on a game on {self.game_url}")
             return
@@ -133,10 +140,11 @@ class Console():
         self.parent_path = path
 
     def find_all_games(self) -> list:
-        self.games = self.soup.findAll('table')
+        self.games = self.soup.find('tbody').findAll('table')
 
     def get_console_folder(self):
-        relative_path = os.path.join(self.parent_path, sanitize_input(self.name))
+        relative_path = os.path.join(
+            self.parent_path, sanitize_input(self.name))
         self.path = get_or_create_folder(relative_path)
 
     def main(self):
